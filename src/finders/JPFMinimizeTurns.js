@@ -18,6 +18,7 @@ function JPFMinimizeTurns(opt) {
     JumpPointFinderBase.call(this, opt);
     this.minimizeTurns = opt.minimizeTurns !== false;
     this.lookAheadDistance = opt.lookAheadDistance || 3;
+    this.turnPenalty = typeof opt.turnPenalty === 'number' ? opt.turnPenalty : 0.5;
 }
 
 JPFMinimizeTurns.prototype = new JumpPointFinderBase();
@@ -42,6 +43,11 @@ JPFMinimizeTurns.prototype._jump = function (x, y, px, py) {
 
     if (grid.getNodeAt(x, y) === this.endNode) {
         return [x, y];
+    }
+
+    // 防御性：严格禁止对角起跳
+    if (dx !== 0 && dy !== 0) {
+        return null;
     }
 
     // Orthogonal movement only - no diagonal checks
@@ -80,6 +86,11 @@ JPFMinimizeTurns.prototype._jump = function (x, y, px, py) {
  * @return {Array<number>|null} Smooth jump point or null
  */
 JPFMinimizeTurns.prototype._findSmoothJump = function (x, y, dx, dy, grid) {
+    // 防御性：严格禁止对角前瞻
+    if (dx !== 0 && dy !== 0) {
+        return null;
+    }
+
     // Look ahead for potential smoother paths
     var nx = x + dx * this.lookAheadDistance;
     var ny = y + dy * this.lookAheadDistance;
@@ -139,7 +150,7 @@ JPFMinimizeTurns.prototype._findNeighbors = function (node) {
 
     // If no parent, return all neighbors (standard behavior)
     if (!parent) {
-        neighborNodes = grid.getNeighbors(node, DiagonalMovement.OrthogonalOnlyAndMinimizeTurns);
+        neighborNodes = grid.getNeighbors(node, DiagonalMovement.Never);
         for (i = 0, l = neighborNodes.length; i < l; ++i) {
             neighborNode = neighborNodes[i];
             neighbors.push([neighborNode.x, neighborNode.y]);
@@ -232,6 +243,65 @@ JPFMinimizeTurns.prototype._findSmoothNeighbors = function (node, dx, dy, grid) 
     }
 
     return smoothNeighbors;
+};
+
+JPFMinimizeTurns.prototype._identifySuccessors = function (node) {
+    var grid = this.grid,
+        heuristic = this.heuristic,
+        openList = this.openList,
+        endX = this.endNode.x,
+        endY = this.endNode.y,
+        neighbors, neighbor,
+        jumpPoint, i, l,
+        x = node.x, y = node.y,
+        jx, jy, dx, dy, d, ng, jumpNode,
+        abs = Math.abs, max = Math.max;
+
+    neighbors = this._findNeighbors(node);
+    for (i = 0, l = neighbors.length; i < l; ++i) {
+        neighbor = neighbors[i];
+        jumpPoint = this._jump(neighbor[0], neighbor[1], x, y);
+        if (jumpPoint) {
+            jx = jumpPoint[0];
+            jy = jumpPoint[1];
+            jumpNode = grid.getNodeAt(jx, jy);
+
+            if (jumpNode.closed) {
+                continue;
+            }
+
+            // 使用曼哈顿距离作为从当前节点到跳点的代价（严格正交）
+            d = abs(jx - x) + abs(jy - y);
+            ng = node.g + d * jumpNode.weight;
+
+            // 可选：对拐弯施加惩罚，鼓励更少的拐点
+            if (this.minimizeTurns && node.parent) {
+                var prevDx = Math.sign(node.x - node.parent.x);
+                var prevDy = Math.sign(node.y - node.parent.y);
+                var currDx = Math.sign(jx - x);
+                var currDy = Math.sign(jy - y);
+                var isTurn = (prevDx !== currDx) || (prevDy !== currDy);
+                if (isTurn) {
+                    ng += this.turnPenalty;
+                }
+            }
+
+            if (!jumpNode.opened || ng < jumpNode.g) {
+                jumpNode.g = ng;
+                // 仍然使用启发式评估到终点（建议使用曼哈顿）
+                jumpNode.h = jumpNode.h || heuristic(abs(jx - endX), abs(jy - endY));
+                jumpNode.f = jumpNode.g + jumpNode.h;
+                jumpNode.parent = node;
+
+                if (!jumpNode.opened) {
+                    openList.push(jumpNode);
+                    jumpNode.opened = true;
+                } else {
+                    openList.updateItem(jumpNode);
+                }
+            }
+        }
+    }
 };
 
 module.exports = JPFMinimizeTurns; 

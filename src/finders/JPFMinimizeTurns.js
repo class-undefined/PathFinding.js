@@ -4,6 +4,7 @@
  */
 var JumpPointFinderBase = require('./JumpPointFinderBase');
 var Util = require('../core/Util');
+var DiagonalMovement = require('../core/DiagonalMovement');
 
 /**
  * Jump Point Finder optimized for minimum corner turns with orthogonal movement only
@@ -14,8 +15,6 @@ var Util = require('../core/Util');
  */
 function JPFMinimizeTurns(opt) {
     opt = opt || {};
-    // Force diagonal movement to be disabled for orthogonal-only movement
-    opt.diagonalMovement = 0; // 0 = Never
     JumpPointFinderBase.call(this, opt);
     this.minimizeTurns = opt.minimizeTurns !== false;
     this.lookAheadDistance = opt.lookAheadDistance || 3;
@@ -140,7 +139,7 @@ JPFMinimizeTurns.prototype._findNeighbors = function (node) {
 
     // If no parent, return all neighbors (standard behavior)
     if (!parent) {
-        neighborNodes = grid.getNeighbors(node, this.diagonalMovement);
+        neighborNodes = grid.getNeighbors(node, DiagonalMovement.OrthogonalOnlyAndMinimizeTurns);
         for (i = 0, l = neighborNodes.length; i < l; ++i) {
             neighborNode = neighborNodes[i];
             neighbors.push([neighborNode.x, neighborNode.y]);

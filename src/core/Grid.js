@@ -196,7 +196,7 @@ Grid.prototype.getNeighbors = function (node, diagonalMovement) {
         s3 = true;
     }
 
-    if (diagonalMovement === DiagonalMovement.Never) {
+    if (diagonalMovement === DiagonalMovement.Never || diagonalMovement === DiagonalMovement.OrthogonalOnlyAndMinimizeTurns) {
         return neighbors;
     }
 

@@ -6,6 +6,7 @@ var JPFNeverMoveDiagonally = require('./JPFNeverMoveDiagonally');
 var JPFAlwaysMoveDiagonally = require('./JPFAlwaysMoveDiagonally');
 var JPFMoveDiagonallyIfNoObstacles = require('./JPFMoveDiagonallyIfNoObstacles');
 var JPFMoveDiagonallyIfAtMostOneObstacle = require('./JPFMoveDiagonallyIfAtMostOneObstacle');
+var JPFMinimizeTurns = require('./JPFMinimizeTurns');
 
 /**
  * Path finder using the Jump Point Search algorithm
@@ -23,6 +24,8 @@ function JumpPointFinder(opt) {
         return new JPFAlwaysMoveDiagonally(opt);
     } else if (opt.diagonalMovement === DiagonalMovement.OnlyWhenNoObstacles) {
         return new JPFMoveDiagonallyIfNoObstacles(opt);
+    } else if (opt.diagonalMovement === DiagonalMovement.OrthogonalOnlyAndMinimizeTurns) {
+        return new JPFMinimizeTurns(opt);
     } else {
         return new JPFMoveDiagonallyIfAtMostOneObstacle(opt);
     }

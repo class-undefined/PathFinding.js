@@ -1,9 +1,9 @@
 /**
  * @author imor / https://github.com/imor
  */
-var Heap       = require('heap');
-var Util       = require('../core/Util');
-var Heuristic  = require('../core/Heuristic');
+var Heap = require('heap');
+var Util = require('../core/Util');
+var Heuristic = require('../core/Heuristic');
 var DiagonalMovement = require('../core/DiagonalMovement');
 
 /**
@@ -23,10 +23,10 @@ function JumpPointFinderBase(opt) {
  * @return {Array<Array<number>>} The path, including both start and
  *     end positions.
  */
-JumpPointFinderBase.prototype.findPath = function(startX, startY, endX, endY, grid) {
-    var openList = this.openList = new Heap(function(nodeA, nodeB) {
-            return nodeA.f - nodeB.f;
-        }),
+JumpPointFinderBase.prototype.findPath = function (startX, startY, endX, endY, grid) {
+    var openList = this.openList = new Heap(function (nodeA, nodeB) {
+        return nodeA.f - nodeB.f;
+    }),
         startNode = this.startNode = grid.getNodeAt(startX, startY),
         endNode = this.endNode = grid.getNodeAt(endX, endY), node;
 
@@ -64,7 +64,7 @@ JumpPointFinderBase.prototype.findPath = function(startX, startY, endX, endY, gr
  * list.
  * @protected
  */
-JumpPointFinderBase.prototype._identifySuccessors = function(node) {
+JumpPointFinderBase.prototype._identifySuccessors = function (node) {
     var grid = this.grid,
         heuristic = this.heuristic,
         openList = this.openList,
@@ -77,7 +77,7 @@ JumpPointFinderBase.prototype._identifySuccessors = function(node) {
         abs = Math.abs, max = Math.max;
 
     neighbors = this._findNeighbors(node);
-    for(i = 0, l = neighbors.length; i < l; ++i) {
+    for (i = 0, l = neighbors.length; i < l; ++i) {
         neighbor = neighbors[i];
         jumpPoint = this._jump(neighbor[0], neighbor[1], x, y);
         if (jumpPoint) {
@@ -92,7 +92,8 @@ JumpPointFinderBase.prototype._identifySuccessors = function(node) {
 
             // include distance, as parent may not be immediately adjacent:
             d = Heuristic.octile(abs(jx - x), abs(jy - y));
-            ng = node.g + d; // next `g` value
+            ng = node.g + d * jumpNode.weight; // next `g` value
+
 
             if (!jumpNode.opened || ng < jumpNode.g) {
                 jumpNode.g = ng;
